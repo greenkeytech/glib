@@ -31,9 +31,25 @@ MarshalParams *_mp = NULL;
 pthread_mutex_t _mp_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t _mp_cond = PTHREAD_COND_INITIALIZER;
 
+// _signal_sync_mutex is used to prevent a race condition we observed.
+// Previously, if the golang callback loop (see below) got a signal
+// (a pointer to a MarshalParams struct) then it was possible for multiple
+// signals to call mp_pass before the callback loop waited again.  When
+// this happened, signals got lost; only the last one in would get picked
+// up because nothing was synchronizing access to the global variable, _mp when
+// when the callback loop thread wasn't waiting in mp_wait.  This mutex is used
+// in mp_pass to insure we don't lose any signals and, hence, we don't
+// miss any golang callbacks firing in response to them.
+pthread_mutex_t _signal_sync_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void mp_pass(MarshalParams *mp) {
 	// Prelock params mutex.
 	pthread_mutex_lock(&mp->mtx);
+
+	// Lock _signal_sync_mutex so that only one thread can set mp and hold it
+	// until the signal (mp) is passed to its golang callback
+	pthread_mutex_lock(&_signal_sync_mutex);
+
 	// Set global params variable
 	pthread_mutex_lock(&_mp_mutex);
 	_mp = mp;
@@ -41,9 +57,15 @@ void mp_pass(MarshalParams *mp) {
 	pthread_cond_broadcast(&_mp_cond);
 	pthread_mutex_unlock(&_mp_mutex);
 
-	// Wait for processing
+	// Wait for the golang code to unlock &mp->mtx after it triggers the callback
+	// It was already locked above, so this will block until go code calls
+	// the C function mp_processed to unlock it.
 	pthread_mutex_lock(&mp->mtx);
 	pthread_mutex_destroy(&mp->mtx);
+
+	// Now that this signal has been passed to the golang callback,
+	// unlock and let the next thread in
+	pthread_mutex_unlock(&_signal_sync_mutex);
 }
 
 MarshalParams* mp_wait() {
