@@ -127,6 +127,11 @@ import (
 	"unsafe"
 )
 
+const (
+	GTypeFundamentalShift = 2
+	GTypeString           = 16
+)
+
 type ObjectCaster interface {
 	AsObject() *Object
 }
@@ -188,6 +193,7 @@ func (o *Object) GetProperty(name string) interface{} {
 	s := C.CString(name)
 	defer C.free(unsafe.Pointer(s))
 	v := new(Value)
+	C.g_value_init(v.g(), GTypeString<<GTypeFundamentalShift)
 	C.g_object_get_property(o.g(), (*C.gchar)(s), v.g())
 	return v.Get()
 }
