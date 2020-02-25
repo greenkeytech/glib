@@ -342,7 +342,7 @@ func (o *Object) ConnectNoi(sig_name string, cb_func, param0 interface{}) {
 }
 
 func (o *Object) GetAllProperties() int {
-	return C.get_all_properties(o.g())
+	return int(C.get_all_properties(o.g()))
 }
 
 type Params map[string]interface{}
