@@ -84,7 +84,7 @@ void mp_processed(MarshalParams* mp) {
 }
 
 int get_all_properties(GObject *inst) {
-	guint num_properties
+	guint num_properties;
 	GObjectClass *obj_class = G_OBJECT_GET_CLASS(inst);
 	property_specs = g_object_class_list_properties (obj_class, &num_properties);
 	return num_properties;
