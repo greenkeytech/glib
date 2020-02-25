@@ -83,6 +83,13 @@ void mp_processed(MarshalParams* mp) {
 	pthread_mutex_unlock(&mp->mtx);
 }
 
+int get_all_properties(GObject *inst) {
+	guint num_properties
+	GObjectClass *obj_class = G_OBJECT_GET_CLASS(inst);
+	property_specs = g_object_class_list_properties (obj_class, &num_properties);
+	return num_properties;
+}
+
 static inline
 void _object_closure_marshal(GClosure* cl, GValue* ret_val, guint n_param,
 		const GValue* params, gpointer ih, gpointer mr_data) {
@@ -331,6 +338,10 @@ func (o *Object) Connect(sig_name string, cb_func, param0 interface{}) {
 func (o *Object) ConnectNoi(sig_name string, cb_func, param0 interface{}) {
 	sid, detail := SignalLookup(sig_name, o.Type())
 	o.connect(true, sid, detail, cb_func, param0)
+}
+
+func (o *Object) GetAllProperties() int {
+	return C.get_all_properties(o.g())
 }
 
 type Params map[string]interface{}
