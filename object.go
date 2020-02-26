@@ -83,14 +83,6 @@ void mp_processed(MarshalParams* mp) {
 	pthread_mutex_unlock(&mp->mtx);
 }
 
-//int get_all_properties(GObject *inst) {
-//	guint num_properties;
-//	GParamSpec **property_specs;
-//	GObjectClass *obj_class = G_OBJECT_GET_CLASS(inst);
-//	property_specs = g_object_class_list_properties (obj_class, &num_properties);
-//	return num_properties;
-//}
-
 GObjectClass *get_object_class(GObject *inst) {
 	return G_OBJECT_GET_CLASS(inst);
 }
@@ -213,10 +205,17 @@ func (o *Object) GetProperty(name string) interface{} {
 func (o *Object) GetAllProperties() []string {
 	gObjectClass := C.get_object_class(o.g())
 	num_properties := C.guint(0)
-	propertySpecs := C.g_object_class_list_properties (gObjectClass, &num_properties);
+	propertySpecs := C.g_object_class_list_properties(gObjectClass, &num_properties)
 	defer C.g_free(C.gpointer(propertySpecs))
-
 	properties := make([]string, uint(num_properties))
+
+	pos := unsafe.Pointer(propertySpecs)
+	for i := 0; i < len(properties); i++ {
+		cName := C.g_param_spec_get_name(pos)
+		properties[i] = C.GoString(cName)
+		pos = unsafe.Pointer(uintptr(pos) + unsafe.Sizeof(pos))
+	}
+
 	return properties
 }
 
