@@ -212,11 +212,11 @@ func (o *Object) GetProperty(name string) interface{} {
 
 func (o *Object) GetAllProperties() []string {
 	gObjectClass := C.get_object_class(o.g())
-	num_properties := C.Uint(0)
+	num_properties := C.guint(0)
 	propertySpecs := C.g_object_class_list_properties (gObjectClass, &num_properties);
 	defer C.g_free(propertySpecs)
-	
-	properties := make([]string, int(num_properties))
+
+	properties := make([]string, uint(num_properties))
 	return properties
 }
 
