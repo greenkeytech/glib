@@ -211,7 +211,7 @@ func (o *Object) GetAllProperties() []string {
 
 	pos := unsafe.Pointer(propertySpecs)
 	for i := 0; i < len(properties); i++ {
-		cName := C.g_param_spec_get_name(pos)
+		cName := C.g_param_spec_get_name(*C.struct_GParamSpec(pos))
 		properties[i] = C.GoString(cName)
 		pos = unsafe.Pointer(uintptr(pos) + unsafe.Sizeof(pos))
 	}
