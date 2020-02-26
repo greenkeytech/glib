@@ -83,10 +83,15 @@ void mp_processed(MarshalParams* mp) {
 	pthread_mutex_unlock(&mp->mtx);
 }
 
+// get_object_class is a wrapper for the G_OBJECT_GET_CLASS macro
+// so we can get object classes from go
 GObjectClass *get_object_class(GObject *inst) {
 	return G_OBJECT_GET_CLASS(inst);
 }
 
+// get_param_spec retrieves an element of an array of pointers to
+// GParamSpec.  This is a helper for the golang code below that needs to
+// work with the array returned from g_object_class_list_properties.
 GParamSpec *get_param_spec(int index, GParamSpec **arr) {
 	return arr[index];
 }
@@ -206,7 +211,7 @@ func (o *Object) GetProperty(name string) interface{} {
 	return v.Get()
 }
 
-func (o *Object) GetAllProperties() []string {
+func (o *Object) GetAllPropertyNames() []string {
 	gObjectClass := C.get_object_class(o.g())
 	numProperties := C.guint(0)
 	paramSpecs := C.g_object_class_list_properties(gObjectClass, &numProperties)
