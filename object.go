@@ -145,11 +145,6 @@ const (
 	GTypeString           = 16
 )
 
-type ObjectProperty struct {
-	Name string
-	CurrentValue interface{}
-}
-
 type ObjectCaster interface {
 	AsObject() *Object
 }
@@ -216,25 +211,18 @@ func (o *Object) GetProperty(name string) interface{} {
 	return v.Get()
 }
 
-func (o *Object) GetAllProperties() []ObjectProperty {
+func (o *Object) GetAllPropertyNames() []string {
 	gObjectClass := C.get_object_class(o.g())
 	numProperties := C.guint(0)
 	paramSpecs := C.g_object_class_list_properties(gObjectClass, &numProperties)
 	defer C.g_free(C.gpointer(paramSpecs))
-	properties := make([]ObjectProperty, uint(numProperties))
+	properties := make([]string, uint(numProperties))
 
 	for i := 0; i < len(properties); i++ {
 		paramSpec := C.get_param_spec(C.int(i), paramSpecs)
 		cName := C.g_param_spec_get_name(paramSpec)
 		name := C.GoString(cName)
-		currentValue := o.GetProperty(name)
-
-		property := ObjectProperty{
-			Name:         name,
-			CurrentValue: currentValue,
-		}
-
-		properties[i] = property
+		properties[i] = name
 	}
 
 	return properties
