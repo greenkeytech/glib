@@ -83,6 +83,19 @@ void mp_processed(MarshalParams* mp) {
 	pthread_mutex_unlock(&mp->mtx);
 }
 
+// get_object_class is a wrapper for the G_OBJECT_GET_CLASS macro
+// so we can get object classes from go
+GObjectClass *get_object_class(GObject *inst) {
+	return G_OBJECT_GET_CLASS(inst);
+}
+
+// get_param_spec retrieves an element of an array of pointers to
+// GParamSpec.  This is a helper for the golang code below that needs to
+// work with the array returned from g_object_class_list_properties.
+GParamSpec *get_param_spec(int index, GParamSpec **arr) {
+	return arr[index];
+}
+
 static inline
 void _object_closure_marshal(GClosure* cl, GValue* ret_val, guint n_param,
 		const GValue* params, gpointer ih, gpointer mr_data) {
@@ -196,6 +209,22 @@ func (o *Object) GetProperty(name string) interface{} {
 	C.g_value_init(v.g(), GTypeString<<GTypeFundamentalShift)
 	C.g_object_get_property(o.g(), (*C.gchar)(s), v.g())
 	return v.Get()
+}
+
+func (o *Object) GetAllPropertyNames() []string {
+	gObjectClass := C.get_object_class(o.g())
+	numProperties := C.guint(0)
+	paramSpecs := C.g_object_class_list_properties(gObjectClass, &numProperties)
+	defer C.g_free(C.gpointer(paramSpecs))
+	properties := make([]string, uint(numProperties))
+
+	for i := 0; i < len(properties); i++ {
+		paramSpec := C.get_param_spec(C.int(i), paramSpecs)
+		name := C.g_param_spec_get_name(paramSpec)
+		properties[i] = C.GoString(name)
+	}
+
+	return properties
 }
 
 func (o *Object) EmitById(sid SignalId, detail Quark, args ...interface{}) interface{} {
