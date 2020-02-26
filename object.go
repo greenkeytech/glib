@@ -214,7 +214,7 @@ func (o *Object) GetAllProperties() []string {
 	gObjectClass := C.get_object_class(o.g())
 	num_properties := C.guint(0)
 	propertySpecs := C.g_object_class_list_properties (gObjectClass, &num_properties);
-	defer C.g_free(propertySpecs)
+	defer C.g_free(C.gpointer(propertySpecs))
 
 	properties := make([]string, uint(num_properties))
 	return properties
