@@ -83,12 +83,16 @@ void mp_processed(MarshalParams* mp) {
 	pthread_mutex_unlock(&mp->mtx);
 }
 
-int get_all_properties(GObject *inst) {
-	guint num_properties;
-	GParamSpec **property_specs;
-	GObjectClass *obj_class = G_OBJECT_GET_CLASS(inst);
-	property_specs = g_object_class_list_properties (obj_class, &num_properties);
-	return num_properties;
+//int get_all_properties(GObject *inst) {
+//	guint num_properties;
+//	GParamSpec **property_specs;
+//	GObjectClass *obj_class = G_OBJECT_GET_CLASS(inst);
+//	property_specs = g_object_class_list_properties (obj_class, &num_properties);
+//	return num_properties;
+//}
+
+GObjectClass *get_object_class(GObject *inst) {
+	return G_OBJECT_GET_CLASS(inst);
 }
 
 static inline
@@ -204,6 +208,16 @@ func (o *Object) GetProperty(name string) interface{} {
 	C.g_value_init(v.g(), GTypeString<<GTypeFundamentalShift)
 	C.g_object_get_property(o.g(), (*C.gchar)(s), v.g())
 	return v.Get()
+}
+
+func (o *Object) GetAllProperties() []string {
+	gObjectClass := C.get_object_class(o.g())
+	num_properties := C.Uint(0)
+	propertySpecs := C.g_object_class_list_properties (gObjectClass, &num_properties);
+	defer C.g_free(propertySpecs)
+	
+	properties := make([]string, int(num_properties))
+	return properties
 }
 
 func (o *Object) EmitById(sid SignalId, detail Quark, args ...interface{}) interface{} {
@@ -339,10 +353,6 @@ func (o *Object) Connect(sig_name string, cb_func, param0 interface{}) {
 func (o *Object) ConnectNoi(sig_name string, cb_func, param0 interface{}) {
 	sid, detail := SignalLookup(sig_name, o.Type())
 	o.connect(true, sid, detail, cb_func, param0)
-}
-
-func (o *Object) GetAllProperties() int {
-	return int(C.get_all_properties(o.g()))
 }
 
 type Params map[string]interface{}
