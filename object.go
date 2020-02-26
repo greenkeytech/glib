@@ -214,7 +214,7 @@ func (o *Object) GetAllProperties() []string {
 	properties := make([]string, uint(numProperties))
 
 	for i := 0; i < len(properties); i++ {
-		paramSpec := C.get_param_spec(C.Int(i), paramSpecs)
+		paramSpec := C.get_param_spec(C.int(i), paramSpecs)
 		name := C.g_param_spec_get_name(paramSpec)
 		properties[i] = C.GoString(name)
 	}
