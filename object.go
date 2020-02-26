@@ -147,7 +147,6 @@ const (
 
 type ObjectProperty struct {
 	Name string
-	DefaultValue interface{}
 	CurrentValue interface{}
 }
 
@@ -230,12 +229,9 @@ func (o *Object) GetAllProperties() []ObjectProperty {
 		name := C.GoString(cName)
 		currentValue := o.GetProperty(name)
 
-		cDefaultValue := *C.g_param_spec_get_default_value(paramSpec)
-
 		property := ObjectProperty{
 			Name:         name,
 			CurrentValue: currentValue,
-			DefaultValue: ValueOf(cDefaultValue).Get(),
 		}
 
 		properties[i] = property
