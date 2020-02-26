@@ -87,6 +87,10 @@ GObjectClass *get_object_class(GObject *inst) {
 	return G_OBJECT_GET_CLASS(inst);
 }
 
+GParamSpec *get_param_spec(int index, GParamSpec **arr) {
+	return arr[index];
+}
+
 static inline
 void _object_closure_marshal(GClosure* cl, GValue* ret_val, guint n_param,
 		const GValue* params, gpointer ih, gpointer mr_data) {
@@ -204,16 +208,15 @@ func (o *Object) GetProperty(name string) interface{} {
 
 func (o *Object) GetAllProperties() []string {
 	gObjectClass := C.get_object_class(o.g())
-	num_properties := C.guint(0)
-	propertySpecs := C.g_object_class_list_properties(gObjectClass, &num_properties)
-	defer C.g_free(C.gpointer(propertySpecs))
-	properties := make([]string, uint(num_properties))
+	numProperties := C.guint(0)
+	paramSpecs := C.g_object_class_list_properties(gObjectClass, &numProperties)
+	defer C.g_free(C.gpointer(paramSpecs))
+	properties := make([]string, uint(numProperties))
 
-	pos := unsafe.Pointer(propertySpecs)
 	for i := 0; i < len(properties); i++ {
-		cName := C.g_param_spec_get_name((*C.struct__GParamSpec)(pos))
-		properties[i] = C.GoString(cName)
-		pos = unsafe.Pointer(uintptr(pos) + unsafe.Sizeof(pos))
+		paramSpec := C.get_param_spec(C.Int(i), paramSpecs)
+		name := C.g_param_spec_get_name(paramSpec)
+		properties[i] = C.GoString(name)
 	}
 
 	return properties
