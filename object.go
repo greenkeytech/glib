@@ -230,7 +230,7 @@ func (o *Object) GetAllProperties() []ObjectProperty {
 		name := C.GoString(cName)
 		currentValue := o.GetProperty(name)
 
-		cDefaultValue := C.g_param_spec_get_default_value(paramSpec)
+		cDefaultValue := *C.g_param_spec_get_default_value(paramSpec)
 
 		property := ObjectProperty{
 			Name:         name,
